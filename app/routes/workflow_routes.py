@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 from sqlalchemy.orm import Session
 from app.models.db import get_db
 from app.models.syllabus import Syllabus
@@ -19,7 +19,7 @@ class ExamAnswers(BaseModel):
     answers: Dict[str, str]
 
 @router.post("/syllabus/upload")
-async def upload_syllabus(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def upload_syllabus(request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
     """Upload and process syllabus file"""
     try:
         logger.info(f"Uploading syllabus file: {file.filename}")
@@ -44,11 +44,29 @@ async def upload_syllabus(file: UploadFile = File(...), db: Session = Depends(ge
         syllabus_agent = SyllabusAgent()
         topics = syllabus_agent.extract_topics(text_content)
         
+        # Get current user from token
+        auth_header = request.headers.get("Authorization")
+        logger.info(f"Auth header: {auth_header}")
+        
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Authentication required")
+        
+        token = auth_header.split(" ")[1]
+        logger.info(f"Token: {token[:20]}...")
+        
+        from app.auth.jwt_handler import verify_token
+        user_data = verify_token(token)
+        logger.info(f"User data: {user_data}")
+        
+        if not user_data:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
         # Save to database
         syllabus = Syllabus(
             title=file.filename,
             content=text_content,
-            topics=json.dumps(topics)
+            topics=json.dumps(topics),
+            user_id=user_data["user_id"]
         )
         db.add(syllabus)
         db.commit()

@@ -65,7 +65,7 @@
         </div>
         
         <!-- Upload Section -->
-        <div class="upload-area">
+        <div class="upload-area" id="upload-section">
             <h3>📚 Upload Syllabus for AI-Powered Exam Prep</h3>
             <input type="file" id="syllabusFile" accept=".pdf,.txt">
             <button onclick="runWorkflow()">🚀 Run Complete Workflow</button>
@@ -94,6 +94,7 @@
         
         // Google OAuth callback
         function handleCredentialResponse(response) {
+            console.log('Google credential received');
             fetch('/api/auth/google', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -101,18 +102,26 @@
             })
             .then(res => res.json())
             .then(data => {
+                console.log('Auth response:', data);
                 if (data.access_token) {
                     authToken = data.access_token;
                     localStorage.setItem('authToken', authToken);
+                    console.log('Token stored:', authToken.substring(0, 20) + '...');
                     showApp(data.user);
+                } else {
+                    console.error('No access token received:', data);
                 }
             })
-            .catch(err => alert('Login failed: ' + err.message));
+            .catch(err => {
+                console.error('Login error:', err);
+                alert('Login failed: ' + err.message);
+            });
         }
         
         function showApp(user) {
             document.getElementById('login-section').style.display = 'none';
             document.getElementById('app-section').style.display = 'block';
+            document.getElementById('upload-section').style.display = 'block';
             document.getElementById('user-name').textContent = user.name;
             document.getElementById('user-avatar').src = user.picture;
         }
@@ -122,6 +131,7 @@
             authToken = null;
             document.getElementById('login-section').style.display = 'block';
             document.getElementById('app-section').style.display = 'none';
+            document.getElementById('upload-section').style.display = 'none';
         }
         
         // Check if user is already logged in
@@ -174,6 +184,11 @@
         }
         
         async function runWorkflow() {
+            if (!authToken) {
+                alert('Please sign in with Google first');
+                return;
+            }
+            
             const fileInput = document.getElementById('syllabusFile');
             const file = fileInput.files[0];
             if (!file) {
@@ -189,9 +204,17 @@
                 const formData = new FormData();
                 formData.append('file', file);
                 
+                const headers = {};
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                    console.log('Sending auth header:', authToken.substring(0, 20) + '...');
+                } else {
+                    console.error('No auth token available');
+                }
+                
                 const uploadResponse = await fetch('/api/syllabus/upload', {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    headers: headers,
                     body: formData
                 });
                 
@@ -207,7 +230,8 @@
                     '<div class="status info">🔄 Step 2: Running LangGraph workflow with supervisor delegation...</div>';
                 
                 const workflowResponse = await fetch(`/api/workflow/prepare-exam/${currentSyllabusId}`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
                 });
                 
                 const workflowResult = await workflowResponse.json();
@@ -236,7 +260,9 @@
         
         async function startExam() {
             try {
-                const response = await fetch(`/api/workflow/quiz/${currentSyllabusId}`);
+                const response = await fetch(`/api/workflow/quiz/${currentSyllabusId}`, {
+                    headers: authToken ? { 'Authorization': `Bearer ${authToken}` } : {}
+                });
                 const result = await response.json();
                 
                 quizQuestions = result.quiz_questions;
@@ -281,9 +307,14 @@
             });
             
             try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (authToken) {
+                    headers['Authorization'] = `Bearer ${authToken}`;
+                }
+                
                 const response = await fetch(`/api/workflow/submit-exam/${currentSyllabusId}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: headers,
                     body: JSON.stringify({ answers: answers })
                 });
                 

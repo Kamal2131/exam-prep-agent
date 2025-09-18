@@ -35,6 +35,11 @@ def verify_token(token: str):
     """Verify JWT token and return user data"""
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Check if token is expired
+        import time
+        if payload.get('exp') and payload['exp'] < time.time():
+            return None
         return payload
-    except:
+    except Exception as e:
+        print(f"Token verification error: {e}")
         return None

@@ -17,4 +17,3 @@ class User(Base):
     
     # Relationships
     syllabi = relationship("Syllabus", back_populates="owner")
-    quiz_attempts = relationship("QuizAttempt", back_populates="user")
