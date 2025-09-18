@@ -1,30 +1,32 @@
 # 🎓 AI-Powered Exam Preparation Agent
 
-An intelligent exam preparation system that uses LangGraph workflows, specialized AI agents, and Google OAuth to generate personalized MCQs and evaluate student performance.
+A local development project that uses LangGraph workflows, specialized AI agents, and Google OAuth to generate personalized MCQs and evaluate student performance from uploaded syllabi.
 
 ## 🚀 Features
 
 ### **Core Functionality**
-- **AI-Powered MCQ Generation**: Automatically creates multiple-choice questions from uploaded syllabi
+- **AI-Powered MCQ Generation**: Automatically creates multiple-choice questions from PDF/TXT syllabi
 - **Specialized Agents**: Math and General subject agents with supervisor delegation
 - **Smart Evaluation**: AI-powered exam grading with detailed feedback
 - **Google OAuth**: Secure authentication with Google accounts
 - **Real-time Workflow**: LangGraph-based processing pipeline
+- **Local Development**: Runs entirely on localhost with SQLite database
 
 ### **Technical Stack**
 - **Backend**: FastAPI, SQLAlchemy, LangGraph
 - **AI/ML**: Groq API (Gemma2-9b-it), LangChain
 - **Authentication**: Google OAuth 2.0, JWT tokens
-- **Database**: SQLite (dev) / PostgreSQL (prod)
+- **Database**: SQLite (local development)
 - **Frontend**: Vanilla JavaScript, HTML5, CSS3
-- **Deployment**: Docker, Docker Compose
+- **File Processing**: PyPDF2 for PDF text extraction
 
 ## 📋 Prerequisites
 
 - Python 3.12+
-- Google Cloud Console account
-- Groq API key
+- Google Cloud Console account (for OAuth setup)
+- Groq API key (free tier available)
 - Git
+- Web browser (Chrome/Firefox recommended for OAuth)
 
 ## 🛠️ Installation
 
@@ -93,20 +95,20 @@ python -c "from app.models.db import engine, Base; Base.metadata.create_all(bind
 
 ## 🚀 Running the Application
 
-### **Development**
+### **Start the Server**
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### **Production (Docker)**
-```bash
-docker-compose up -d
 ```
 
 ### **Access Application**
 - **Web Interface**: http://localhost:8000
 - **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/workflow/agent-health
+- **Agent Health Check**: http://localhost:8000/api/workflow/agent-health
+
+### **Development Features**
+- **Hot Reload**: Code changes automatically restart the server
+- **Debug Logging**: Detailed logs in console for troubleshooting
+- **SQLite Browser**: Easy database inspection with DB Browser for SQLite
 
 ## 📖 Usage Guide
 
@@ -235,106 +237,94 @@ pytest --cov=app tests/
 curl http://localhost:8000/api/workflow/agent-health
 ```
 
-## 🚀 Production Deployment
+## 📊 Performance & Limitations
 
-### **Infrastructure Requirements**
-- **CPU**: 4 cores minimum
-- **RAM**: 8GB minimum
-- **Storage**: 50GB SSD
-- **Network**: 1Gbps
+### **Current Capabilities**
+- **File Size**: Up to 10MB PDF/TXT files
+- **MCQ Generation**: 3-5 questions per topic
+- **Topics**: Up to 20 topics per syllabus
+- **Quiz Length**: 10 questions per exam
+- **Concurrent Users**: Single user (local development)
 
-### **Environment Setup**
-```bash
-# Production environment variables
-DATABASE_URL=postgresql://user:pass@host:5432/examdb
-REDIS_URL=redis://host:6379
-GOOGLE_CLIENT_ID=prod-client-id
-SECRET_KEY=256-bit-production-key
-```
+### **Response Times**
+- **File Upload**: < 5 seconds
+- **Topic Extraction**: 5-10 seconds
+- **MCQ Generation**: 30-60 seconds (depends on topics)
+- **Exam Evaluation**: < 5 seconds
 
-### **Docker Deployment**
-```bash
-# Build and deploy
-docker-compose -f docker-compose.prod.yml up -d
+## 🎯 Project Goals
 
-# Database migrations
-docker exec app alembic upgrade head
+### **Learning Objectives**
+- **AI Integration**: Hands-on experience with LangChain and LangGraph
+- **Agent Architecture**: Understanding multi-agent systems and delegation
+- **OAuth Implementation**: Real-world authentication with Google
+- **API Development**: Building RESTful APIs with FastAPI
+- **Workflow Orchestration**: Complex multi-step AI processes
 
-# Monitor logs
-docker logs -f app
-```
+### **Technical Achievements**
+- **Multi-Agent System**: Supervisor coordinating specialized agents
+- **File Processing**: PDF text extraction and analysis
+- **Real-time AI**: Streaming responses from Groq API
+- **Database Design**: Relational data modeling with SQLAlchemy
+- **Frontend Integration**: Vanilla JS with modern OAuth flow
 
-### **Scaling Strategy**
-- **Load Balancer**: Nginx/CloudFlare
-- **App Servers**: 3+ FastAPI instances
-- **Database**: PostgreSQL with read replicas
-- **Cache**: Redis cluster
-- **Background Jobs**: Celery workers
-
-## 💰 Business Model
-
-### **Pricing Tiers**
-- **Free**: 5 exams/month
-- **Premium**: $9.99/month unlimited
-- **Enterprise**: Custom pricing
-
-### **Revenue Projections**
-- **Year 1**: $60K ARR (500 paid users)
-- **Year 2**: $300K ARR (2,500 paid users)
-- **Year 3**: $1M ARR (8,000 paid users)
-
-## 🔒 Security
+## 🔒 Security (Local Development)
 
 ### **Authentication**
 - Google OAuth 2.0 integration
-- JWT token-based sessions
-- Secure token storage
+- JWT token-based sessions (24-hour expiry)
+- Local storage for session persistence
 
 ### **Data Protection**
-- Input validation on all endpoints
-- File upload restrictions
-- Rate limiting (100 requests/hour)
-- HTTPS enforcement in production
+- Input validation on file uploads
+- File type restrictions (.pdf, .txt only)
+- File size limits (10MB maximum)
+- SQL injection prevention with SQLAlchemy ORM
 
-### **Privacy**
-- User data encrypted at rest
-- No password storage required
-- GDPR compliant data handling
+### **Local Security Notes**
+- HTTP (not HTTPS) acceptable for localhost
+- SQLite database stored locally
+- API keys stored in .env file (gitignored)
+- No external data transmission except to Groq API
 
-## 🤝 Contributing
+## 🤝 Development Notes
 
-### **Development Setup**
-1. Fork the repository
-2. Create feature branch
-3. Make changes with tests
-4. Submit pull request
+### **Code Structure**
+- `app/models/`: Database models (User, Syllabus, MCQ, etc.)
+- `app/routes/`: API endpoints (auth, workflow)
+- `app/agents/`: AI agents (Supervisor, Math, General, Syllabus)
+- `app/auth/`: Authentication handlers (JWT, Google OAuth)
+- `app/templates/`: Frontend HTML/CSS/JS
+- `app/utils/`: Utility functions (logging, PDF processing)
 
-### **Code Standards**
-- Python: PEP 8 compliance
-- JavaScript: ES6+ standards
-- Documentation: Docstrings required
-- Testing: 80%+ coverage
+### **Key Files**
+- `main.py`: FastAPI application entry point
+- `exam_workflow.py`: LangGraph workflow orchestration
+- `supervisor_agent.py`: Agent delegation and coordination
+- `exam.html`: Frontend interface
+- `.env`: Environment variables (API keys, config)
 
-## 📝 Changelog
+## 📝 Development Progress
 
-### **v1.0.0** (Current)
+### **Completed Features**
 - ✅ Google OAuth authentication
 - ✅ AI-powered MCQ generation
 - ✅ LangGraph workflow system
 - ✅ Supervisor agent delegation
 - ✅ Real-time exam evaluation
+- ✅ PDF/TXT file processing
+- ✅ SQLite database integration
+- ✅ RESTful API with FastAPI
 
-### **Roadmap v1.1.0**
-- 🔄 Payment integration (Stripe)
+### **Potential Enhancements**
+- 🔄 Better error handling and user feedback
 - 🔄 Mobile responsive design
 - 🔄 Bulk syllabus upload
-- 🔄 Performance analytics
-
-### **Roadmap v1.2.0**
-- 🔄 Mobile app (React Native)
-- 🔄 Collaborative study groups
-- 🔄 AI study recommendations
-- 🔄 Offline mode support
+- 🔄 Export results to PDF
+- 🔄 Study progress tracking
+- 🔄 More question types (True/False, Fill-in-blank)
+- 🔄 Custom difficulty levels
+- 🔄 Subject-specific agents (Science, History, etc.)
 
 ## 🐛 Troubleshooting
 
@@ -366,34 +356,47 @@ python -c "from app.models.db import engine, Base; Base.metadata.create_all(bind
 curl http://localhost:8000/api/workflow/agent-health
 ```
 
-## 📞 Support
+## 📞 Development Resources
 
 ### **Documentation**
-- API Docs: http://localhost:8000/docs
-- Architecture: `/docs/architecture.md`
-- Deployment: `/PRODUCTION_GUIDE.md`
+- **API Docs**: http://localhost:8000/docs (when server is running)
+- **Local Setup**: [LOCAL_SETUP.md](LOCAL_SETUP.md) (5-minute quick start)
+- **Architecture**: Multi-agent system with LangGraph workflows
 
-### **Community**
-- GitHub Issues: Bug reports and features
-- Discussions: General questions
-- Wiki: Extended documentation
+### **Useful Links**
+- **Groq Console**: https://console.groq.com/ (for API keys)
+- **Google Cloud Console**: https://console.cloud.google.com/ (for OAuth setup)
+- **LangChain Docs**: https://python.langchain.com/docs/
+- **FastAPI Docs**: https://fastapi.tiangolo.com/
 
-### **Commercial Support**
-- Email: support@examprep.ai
-- Response Time: 24 hours
-- SLA: 99.9% uptime guarantee
+### **Development Tools**
+- **DB Browser for SQLite**: View/edit local database
+- **Postman/Insomnia**: Test API endpoints
+- **Browser DevTools**: Debug frontend and OAuth flow
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - Feel free to use this project for learning and development.
 
 ## 🙏 Acknowledgments
 
-- **LangChain**: AI agent framework
-- **Groq**: Fast LLM inference
-- **FastAPI**: Modern Python web framework
-- **Google**: OAuth authentication service
+- **LangChain & LangGraph**: Powerful AI agent framework
+- **Groq**: Fast and affordable LLM inference
+- **FastAPI**: Excellent Python web framework
+- **Google OAuth**: Secure authentication service
+- **SQLAlchemy**: Robust Python ORM
+
+## 🎆 Learning Outcomes
+
+This project demonstrates:
+- **Multi-agent AI systems** with specialized roles
+- **Workflow orchestration** using LangGraph
+- **Modern web APIs** with FastAPI
+- **OAuth 2.0 implementation** with Google
+- **File processing** and text extraction
+- **Database design** and ORM usage
+- **Frontend-backend integration**
 
 ---
 
-**Built with ❤️ for better education through AI**
+**Built for learning AI agent development and workflow orchestration 🤖**
